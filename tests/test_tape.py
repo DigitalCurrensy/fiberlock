@@ -1,22 +1,17 @@
 """The error rate must be a reading under 0.11."""
 from platforms.fiberlock.src.application.session import wrap_from_pin
 from platforms.fiberlock.src.application.tape import BadQber, MissingQber, qber_from_tape
-from platforms.phasepin.src.application.clock import pin_time
-from platforms.phasepin.src.application.inaccuracy import attach_inaccuracy
-from platforms.phasepin.src.application.tti import tti_from_operator
+
+
+class _Clock:
+    def __init__(self, time_source, grade):
+        self.time_source = time_source
+        self.grade = grade
 
 
 def test_tape_qber_wraps():
     qber = qber_from_tape({"span_id": "span-4", "qber": 0.04})
-    pin = pin_time(
-        observed_at="2026-09-13T23:00:00Z",
-        csac_ok=True,
-        ptp_offset_ns=120,
-        holdover_s=0,
-        gps_offset_ns=40,
-    )
-    quality = attach_inaccuracy(pin, tti_from_operator(400))
-    session = wrap_from_pin("span-4", "ks-1", qber, 256, quality)
+    session = wrap_from_pin("span-4", "ks-1", qber, 256, _Clock("csac", "profile_in_spec"))
     assert session.wrapped is True
     assert session.qber == 0.04
 
